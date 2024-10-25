@@ -1,0 +1,45 @@
+# choose the proper node image
+FROM node:20-alpine as BUILD_IMAGE
+WORKDIR /app/react-app
+
+# copy package.son
+COPY package.json .
+
+#install all our packages
+RUN npm install
+
+# copy all our remaining files
+COPY . .
+
+# Finally build our project
+RUN npm run build
+
+
+#Here we are implementing the multi-stage build.
+#beginning of second stage
+FROM node:20-alpine as PRODUCTION_IMAGE
+WORKDIR /app/react-app
+
+# here, we are copying /app/react-app/dist folder from BUILD_IMAGES to /app/react-app in this stage
+COPY --from=BUILD_IMAGE /app/react-app/dist /app/react-app/dist
+# Utilise une image de NGINX pour servir l'application
+# FROM nginx:alpine
+# COPY --from=BUILD_IMAGE /app/react-app/dist /usr/share/nginx/html
+
+# Expose le port 80
+# EXPOSE 80
+EXPOSE 8080
+
+# copy package.json
+COPY package.json .
+COPY vite.config.js .
+
+#install all our packages
+RUN npm install
+
+EXPOSE 8080
+
+# start our app  
+ CMD [ "npm", "run", "preview" ]
+# Commande par défaut pour démarrer NGINX
+# CMD ["nginx", "-g", "daemon off;"]
